@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Project support files from the university
+*.py
+*.sh
+nbproject/
+simulator/
