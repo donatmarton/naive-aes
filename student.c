@@ -6,6 +6,9 @@
 
 void addRoundKey(uint8_t*, uint8_t*);
 void subBytes(uint8_t*);
+void shiftRows(uint8_t*);
+void mixColumns(uint8_t*);
+uint8_t xtime(uint8_t);
 
 uint8_t subBytesLookup[] = {
 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -99,6 +102,12 @@ void aes128_encrypt(void *buffer, void *param)
     
     // calculate the first round to test addRoundKey function
     addRoundKey(state, keys);
+    
+    // calculate second round to test all other functions too
+    subBytes(state);
+    shiftRows(state);
+    mixColumns(state);
+    addRoundKey(state, &keys[16]);
 }
 
 void addRoundKey(uint8_t* stateMatrix, uint8_t* roundKey)
@@ -141,4 +150,47 @@ void shiftRows(uint8_t* stateMatrix)
     stateMatrix[11] = stateMatrix[7];
     stateMatrix[7]  = stateMatrix[3];
     stateMatrix[3]  = temporaryByte;    
+}
+
+void mixColumns(uint8_t* stateMatrix)
+{
+    uint8_t mixedStateMatrix[16];
+    uint8_t i;
+    for(i=0; i<4; ++i) // for every column
+    {
+        uint8_t ofs = 4*i; // the first byte index in the current column
+        mixedStateMatrix[ofs] = 
+                xtime(stateMatrix[ofs]) ^ 
+                xtime(stateMatrix[ofs+1]) ^ stateMatrix[ofs+1] ^
+                stateMatrix[ofs+2] ^ 
+                stateMatrix[ofs+3];
+        mixedStateMatrix[ofs+1] = 
+                stateMatrix[ofs] ^ 
+                xtime(stateMatrix[ofs+1]) ^
+                xtime(stateMatrix[ofs+2]) ^ stateMatrix[ofs+2] ^
+                stateMatrix[ofs+3];
+        mixedStateMatrix[ofs+2] = 
+                stateMatrix[ofs] ^ 
+                stateMatrix[ofs+1] ^
+                xtime(stateMatrix[ofs+2]) ^ 
+                xtime(stateMatrix[ofs+3]) ^ stateMatrix[ofs+3];
+        mixedStateMatrix[ofs+3] = 
+                xtime(stateMatrix[ofs]) ^ stateMatrix[ofs] ^
+                stateMatrix[ofs+1] ^
+                stateMatrix[ofs+2] ^ 
+                xtime(stateMatrix[ofs+3]);
+    }
+    for(i=0; i<16; ++i)
+    {
+        stateMatrix[i] = mixedStateMatrix[i];
+    }
+}
+
+uint8_t xtime(uint8_t byte)
+{
+    uint8_t result;
+    result = byte << 1;
+    if (byte & 0x80)
+        result ^= 0x1b;
+    return result;
 }
