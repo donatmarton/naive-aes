@@ -5,6 +5,7 @@
 // #include <string.h>
 
 void addRoundKey(uint8_t*, uint8_t*);
+void subBytes(uint8_t*);
 
 uint8_t subBytesLookup[] = {
 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -107,4 +108,37 @@ void addRoundKey(uint8_t* stateMatrix, uint8_t* roundKey)
     {
         stateMatrix[i] = stateMatrix[i] ^ roundKey[i];
     }
+}
+
+void subBytes(uint8_t* stateMatrix)
+{
+    uint8_t i;
+    for(i=0; i<16; ++i)
+    {
+        stateMatrix[i] = subBytesLookup[stateMatrix[i]];
+    }
+}
+
+void shiftRows(uint8_t* stateMatrix)
+{
+    uint8_t temporaryByte;
+    
+    temporaryByte   = stateMatrix[1];
+    stateMatrix[1]  = stateMatrix[5];
+    stateMatrix[5]  = stateMatrix[9];
+    stateMatrix[9]  = stateMatrix[13];
+    stateMatrix[13] = temporaryByte;
+
+    temporaryByte   = stateMatrix[2];
+    stateMatrix[2]  = stateMatrix[10];
+    stateMatrix[10] = temporaryByte;
+    temporaryByte   = stateMatrix[6];
+    stateMatrix[6]  = stateMatrix[14];
+    stateMatrix[14] = temporaryByte;
+    
+    temporaryByte   = stateMatrix[15];
+    stateMatrix[15] = stateMatrix[11];
+    stateMatrix[11] = stateMatrix[7];
+    stateMatrix[7]  = stateMatrix[3];
+    stateMatrix[3]  = temporaryByte;    
 }
