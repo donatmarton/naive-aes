@@ -1,4 +1,4 @@
-// OPTIONS: -O2 -std=gnu99
+// OPTIONS: -O3 -std=gnu99
 #include "student.h"
 #include <inttypes.h>
 #include <stdlib.h>
