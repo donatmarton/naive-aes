@@ -1,6 +1,7 @@
 // OPTIONS: -O2 -std=gnu99
 #include "student.h"
 #include <inttypes.h>
+#include <stdlib.h>
 // #include <string.h>
 
 uint8_t subBytesLookup[] = {
@@ -24,10 +25,80 @@ uint8_t subBytesLookup[] = {
 
 void *aes128_init(void *key)
 {
-	return 0;
+    uint8_t* pOriginalKey = key;
+    uint8_t roundConstant[] = {
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
+    }; // the round constants as per standard, starting from round 1 to 10
+    
+    // allocate memory for storing all round keys
+    uint8_t *pRoundKeys = (uint8_t*)malloc(11*16*sizeof(uint8_t));
+    
+    // the first round key is the original key itself
+    // copy the 16 bytes of words 0..3 of round 0
+    uint8_t i;
+    for(i=0; i<16; ++i)
+    {
+        pRoundKeys[i] = pOriginalKey[i];
+    }
+    
+    // expand keys for every round (rounds 1..10)
+    uint8_t expandedRound;
+    uint8_t actualKeyWord = 4; // the words 0..3 of round 0 are already done
+    for(expandedRound = 1; expandedRound <= 10; ++expandedRound)
+    {
+        uint8_t * pWordMinusOne;
+        uint8_t * pWordMinusFour;
+        for(i=0;i<4;++i)
+        {
+            pWordMinusOne = &pRoundKeys[(actualKeyWord-1)*4];
+            pWordMinusFour = &pRoundKeys[(actualKeyWord-4)*4];
+            if(actualKeyWord % 4 == 0)
+            {
+                // rotate the word by a byte left
+                uint8_t rotatedWord[4];
+                rotatedWord[0] = pWordMinusOne[1];
+                rotatedWord[1] = pWordMinusOne[2];
+                rotatedWord[2] = pWordMinusOne[3];
+                rotatedWord[3] = pWordMinusOne[0];
+                
+                // for every byte: s-box and XOR with round constant
+                uint8_t *pSBoxedWord = (uint8_t*)malloc(4*sizeof(uint8_t)); 
+                pSBoxedWord[0] = subBytesLookup[rotatedWord[0]] ^ roundConstant[expandedRound-1];
+                pSBoxedWord[1] = subBytesLookup[rotatedWord[1]];
+                pSBoxedWord[2] = subBytesLookup[rotatedWord[2]];
+                pSBoxedWord[3] = subBytesLookup[rotatedWord[3]];
+                
+                pWordMinusOne = pSBoxedWord;
+            }
+            // w_i-1 XOR w_i-4
+            pRoundKeys[(actualKeyWord)*4]   = pWordMinusOne[0] ^ pWordMinusFour[0];
+            pRoundKeys[(actualKeyWord)*4+1] = pWordMinusOne[1] ^ pWordMinusFour[1];
+            pRoundKeys[(actualKeyWord)*4+2] = pWordMinusOne[2] ^ pWordMinusFour[2];
+            pRoundKeys[(actualKeyWord)*4+3] = pWordMinusOne[3] ^ pWordMinusFour[3];
+            
+            // if memory was allocated for transformation, free it
+            if(actualKeyWord % 4 == 0)
+            {
+                free(pWordMinusOne);
+            }
+            
+            // move on to processing the next key word of the actual round
+            ++actualKeyWord;
+        }
+    }
+    return pRoundKeys;
 }
 
 void aes128_encrypt(void *buffer, void *param)
 {
-
+    // output a selected round key for testing purposes
+#define ROUND_KEY_TO_GIVE_AS_OUTPUT 10
+    uint8_t* state = buffer;
+    uint8_t* keys = param;
+    
+    uint8_t i;
+    for(i=0;i<16;++i)
+    {
+        state[i] = keys[ROUND_KEY_TO_GIVE_AS_OUTPUT*16+i];
+    }
 }
