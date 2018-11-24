@@ -4,6 +4,8 @@
 #include <stdlib.h>
 // #include <string.h>
 
+void addRoundKey(uint8_t*, uint8_t*);
+
 uint8_t subBytesLookup[] = {
 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -91,14 +93,18 @@ void *aes128_init(void *key)
 
 void aes128_encrypt(void *buffer, void *param)
 {
-    // output a selected round key for testing purposes
-#define ROUND_KEY_TO_GIVE_AS_OUTPUT 10
     uint8_t* state = buffer;
     uint8_t* keys = param;
     
+    // calculate the first round to test addRoundKey function
+    addRoundKey(state, keys);
+}
+
+void addRoundKey(uint8_t* stateMatrix, uint8_t* roundKey)
+{
     uint8_t i;
-    for(i=0;i<16;++i)
+    for(i=0; i<16; ++i)
     {
-        state[i] = keys[ROUND_KEY_TO_GIVE_AS_OUTPUT*16+i];
+        stateMatrix[i] = stateMatrix[i] ^ roundKey[i];
     }
 }
