@@ -100,14 +100,23 @@ void aes128_encrypt(void *buffer, void *param)
     uint8_t* state = buffer;
     uint8_t* keys = param;
     
-    // calculate the first round to test addRoundKey function
+    // calculate first round
     addRoundKey(state, keys);
     
-    // calculate second round to test all other functions too
+    // calculate rounds 1..9
+    uint8_t i;
+    for(i=1; i<=9; ++i)
+    {
+        subBytes(state);
+        shiftRows(state);
+        mixColumns(state);
+        addRoundKey(state, &keys[16*i]);
+    }
+    
+    // calculate last round (10th)
     subBytes(state);
     shiftRows(state);
-    mixColumns(state);
-    addRoundKey(state, &keys[16]);
+    addRoundKey(state, &keys[16*i]);
 }
 
 void addRoundKey(uint8_t* stateMatrix, uint8_t* roundKey)
